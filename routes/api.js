@@ -12,12 +12,17 @@ function requireAuth(req, res, next) {
 // ─── Auth ───
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
+  console.log('Login attempt:', username, '| ENV user:', process.env.ADMIN_USERNAME, '| ENV pass set:', !!process.env.ADMIN_PASSWORD);
   const envUser = process.env.ADMIN_USERNAME || 'admin';
-  const envPass = process.env.ADMIN_PASSWORD || 'latika2024';
+  const envPass = process.env.ADMIN_PASSWORD || 'Latika2024';
   if (username === envUser && password === envPass) {
     req.session.user = { username };
-    res.json({ ok: true });
+    req.session.save((err) => {
+      if (err) { console.error('Session save error:', err); return res.status(500).json({ error: 'Session error' }); }
+      res.json({ ok: true });
+    });
   } else {
+    console.log('Login failed — expected:', envUser, '/', envPass, '| got:', username, '/', password);
     res.status(401).json({ error: 'Invalid credentials' });
   }
 });
