@@ -65,8 +65,12 @@ async function login() {
     const data = await res.json();
     if (res.ok && data.ok) {
       // Store token for Chrome which blocks cookies
-      if (data.token) localStorage.setItem('pms_auth_token', data.token);
-      window.location.href = '/';
+      if (data.token) {
+        localStorage.setItem('pms_auth_token', data.token);
+        sessionStorage.setItem('pms_auth_token', data.token);
+      }
+      // Small delay to ensure storage is committed before redirect
+      setTimeout(() => { window.location.replace('/'); }, 100);
     } else {
       errEl.textContent = 'Invalid username or password.';
       errEl.style.display = 'block';
