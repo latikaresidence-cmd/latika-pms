@@ -17,9 +17,9 @@ h2{font-size:18px;font-weight:700;color:#1A1D23;margin-bottom:6px;}
 p{font-size:13px;color:#9299A8;margin-bottom:24px;}
 .form-group{margin-bottom:16px;}
 label{display:block;font-size:12px;font-weight:500;color:#5A6072;margin-bottom:6px;}
-input{width:100%;padding:10px 14px;border:1px solid #E2E5EC;border-radius:8px;font-size:14px;color:#1A1D23;transition:border-color 0.15s;}
-input:focus{outline:none;border-color:#0298B2;box-shadow:0 0 0 3px rgba(2,152,178,0.12);}
-.btn{width:100%;padding:12px;background:#0298B2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:background 0.15s;}
+input{width:100%;padding:10px 14px;border:1px solid #E2E5EC;border-radius:8px;font-size:14px;color:#1A1D23;}
+input:focus{outline:none;border-color:#0298B2;}
+.btn{width:100%;padding:12px;background:#0298B2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
 .btn:hover{background:#017a8f;}
 .error{background:#FEE2E2;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;}
 .footer{text-align:center;font-size:11px;color:#9299A8;margin-top:24px;}
@@ -39,7 +39,7 @@ input:focus{outline:none;border-color:#0298B2;box-shadow:0 0 0 3px rgba(2,152,17
   <div class="error" id="error-msg">Invalid username or password.</div>
   <div class="form-group">
     <label>Username</label>
-    <input type="text" id="username" placeholder="admin" autocomplete="username">
+    <input type="text" id="username" value="admin" autocomplete="username">
   </div>
   <div class="form-group">
     <label>Password</label>
@@ -50,22 +50,21 @@ input:focus{outline:none;border-color:#0298B2;box-shadow:0 0 0 3px rgba(2,152,17
 </div>
 <script>
 document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-
 async function login() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
   const errEl = document.getElementById('error-msg');
   errEl.style.display = 'none';
-  if (!username || !password) { errEl.textContent = 'Please enter username and password.'; errEl.style.display = 'block'; return; }
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      credentials: 'include', body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (res.ok && data.ok) {
+      // Store token for Chrome which blocks cookies
       if (data.token) localStorage.setItem('pms_auth_token', data.token);
       window.location.href = '/';
     } else {
