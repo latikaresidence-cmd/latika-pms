@@ -2519,6 +2519,8 @@ const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=
 async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
 async function loadFromServer(){
+  // Inline date normalization - doesn't depend on main script
+  function normD(d){if(!d)return '';if(typeof d==='string'&&d.includes('T'))return d.split('T')[0];return d?String(d).slice(0,10):'';}
   try{
     const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
     if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
@@ -2526,9 +2528,13 @@ async function loadFromServer(){
     if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
     if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
     if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
-    normalizeAllDates();
-    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
-    renderPage('dashboard');updateHkBadge();
+    // Normalize dates inline
+    if(typeof reservations!=='undefined')reservations.forEach(r=>{if(r.checkin)r.checkin=normD(r.checkin);if(r.checkout)r.checkout=normD(r.checkout);});
+    if(typeof payments!=='undefined')payments.forEach(p=>{if(p.date)p.date=normD(p.date);});
+    if(typeof save!=='undefined'){
+      save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    }
+    if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
     const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
@@ -3168,6 +3174,8 @@ const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=
 async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
 async function loadFromServer(){
+  // Inline date normalization - doesn't depend on main script
+  function normD(d){if(!d)return '';if(typeof d==='string'&&d.includes('T'))return d.split('T')[0];return d?String(d).slice(0,10):'';}
   try{
     const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
     if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
@@ -3175,9 +3183,13 @@ async function loadFromServer(){
     if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
     if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
     if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
-    normalizeAllDates();
-    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
-    renderPage('dashboard');updateHkBadge();
+    // Normalize dates inline
+    if(typeof reservations!=='undefined')reservations.forEach(r=>{if(r.checkin)r.checkin=normD(r.checkin);if(r.checkout)r.checkout=normD(r.checkout);});
+    if(typeof payments!=='undefined')payments.forEach(p=>{if(p.date)p.date=normD(p.date);});
+    if(typeof save!=='undefined'){
+      save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    }
+    if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
     const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
@@ -3345,6 +3357,8 @@ const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=
 async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
 async function loadFromServer(){
+  // Inline date normalization - doesn't depend on main script
+  function normD(d){if(!d)return '';if(typeof d==='string'&&d.includes('T'))return d.split('T')[0];return d?String(d).slice(0,10):'';}
   try{
     const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
     if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
@@ -3352,9 +3366,13 @@ async function loadFromServer(){
     if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
     if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
     if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
-    normalizeAllDates();
-    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
-    renderPage('dashboard');updateHkBadge();
+    // Normalize dates inline
+    if(typeof reservations!=='undefined')reservations.forEach(r=>{if(r.checkin)r.checkin=normD(r.checkin);if(r.checkout)r.checkout=normD(r.checkout);});
+    if(typeof payments!=='undefined')payments.forEach(p=>{if(p.date)p.date=normD(p.date);});
+    if(typeof save!=='undefined'){
+      save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    }
+    if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
     const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
@@ -3541,6 +3559,8 @@ const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=
 async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
 async function loadFromServer(){
+  // Inline date normalization - doesn't depend on main script
+  function normD(d){if(!d)return '';if(typeof d==='string'&&d.includes('T'))return d.split('T')[0];return d?String(d).slice(0,10):'';}
   try{
     const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
     if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
@@ -3548,9 +3568,13 @@ async function loadFromServer(){
     if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
     if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
     if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
-    normalizeAllDates();
-    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
-    renderPage('dashboard');updateHkBadge();
+    // Normalize dates inline
+    if(typeof reservations!=='undefined')reservations.forEach(r=>{if(r.checkin)r.checkin=normD(r.checkin);if(r.checkout)r.checkout=normD(r.checkout);});
+    if(typeof payments!=='undefined')payments.forEach(p=>{if(p.date)p.date=normD(p.date);});
+    if(typeof save!=='undefined'){
+      save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    }
+    if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
     const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
