@@ -1011,32 +1011,8 @@ function persist(){save('pms_apts',apts);save('pms_res',reservations);save('pms_
 // HELPERS
 // ─────────────────────────────
 function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
-
-// ─── Date normalization ───
-function normDate(d){
-  if(!d) return '';
-  if(typeof d==='string'){
-    if(d.includes('T')) return d.split('T')[0];
-    return d.slice(0,10);
-  }
-  return '';
-}
-function normalizeAllDates(){
-  let fixed=0;
-  reservations.forEach(r=>{
-    const ci=normDate(r.checkin);
-    const co=normDate(r.checkout);
-    if(ci!==r.checkin||co!==r.checkout){r.checkin=ci;r.checkout=co;fixed++;}
-  });
-  payments.forEach(p=>{if(p.date)p.date=normDate(p.date);});
-  invoices.forEach(i=>{
-    if(i.date)i.date=normDate(i.date);
-    if(i.periodFrom)i.periodFrom=normDate(i.periodFrom);
-    if(i.periodTo)i.periodTo=normDate(i.periodTo);
-  });
-  if(fixed>0){save('pms_res',reservations);save('pms_pays',payments);save('pms_invoices',invoices);}
-  return fixed;
-}
+function normDate(d){if(!d)return '';if(typeof d==='string'){if(d.includes('T'))return d.split('T')[0];return d.slice(0,10);}return '';}
+function normalizeAllDates(){let fixed=0;reservations.forEach(r=>{const ci=normDate(r.checkin),co=normDate(r.checkout);if(ci!==r.checkin||co!==r.checkout){r.checkin=ci;r.checkout=co;fixed++;}});if(fixed>0)save('pms_res',reservations);return fixed;}
 function todayStr(){return new Date().toISOString().split('T')[0];}
 function fmtDate(d){if(!d)return'—';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function nights(a,b){if(!a||!b)return 0;const n=Math.round((new Date(b)-new Date(a))/(864e5));return n>0?n:0;}
@@ -2538,138 +2514,28 @@ ${inv.notes?`<div style="margin-top:20px;padding:12px 16px;background:#F0F2F6;bo
 </div>
 
 <script>window.onload=function(){window.print();};<\/script>
-
 <script>
-// ─── ONLINE API SYNC LAYER ───
-const IS_ONLINE = window.location.protocol === 'https:' || (window.location.hostname !== 'localhost' && !window.location.href.startsWith('file://'));
-
-async function api(method, path, body){
-  try{
-    const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
-    if(body) opts.body=JSON.stringify(body);
-    const r=await fetch('/api'+path,opts);
-    if(r.status===401){window.location.href='/login';return null;}
-    return r.ok?await r.json():null;
-  }catch(e){return null;}
-}
-
+const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=='localhost'&&!window.location.href.startsWith('file://'));
+async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
-  async function loadFromServer(){
-    try{
-      const [sApts,sGuests,sRes,sPays,sInvs,sHk,sMnt,sCfg]=await Promise.all([
-        api('GET','/apartments'),api('GET','/guests'),api('GET','/reservations'),
-        api('GET','/payments'),api('GET','/invoices'),api('GET','/housekeeping'),
-        api('GET','/maintenance'),api('GET','/settings')
-      ]);
-
-      if(sApts&&sApts.length){
-        apts=sApts.map(a=>({
-          id:a.id,name:a.name,type:a.type,floor:a.floor||'',
-          rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,
-          rateMonth:parseFloat(a.rate_month)||0,rate:parseFloat(a.rate_night)||0,
-          rateType:a.rate_type||'night',maxGuests:a.max_guests||2,
-          status:a.status||'available',allowExpat:a.allow_expat,
-          minContractMonths:a.min_contract_months||1,notes:a.notes||''
-        }));
-      }
-
-      if(sGuests&&sGuests.length){
-        guests=sGuests.map(g=>({
-          id:g.id,first:g.first_name,last:g.last_name,
-          email:g.email||'',phone:g.phone||'',
-          country:g.country||'',idNum:g.id_num||'',
-          lang:g.lang||'en',notes:g.notes||''
-        }));
-      }
-
-      if(sRes&&sRes.length){
-        reservations=sRes.map(r=>({
-          id:r.id,apt:r.apt_id,guest:r.guest_id,
-          checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,
-          checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,
-          rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',
-          total:parseFloat(r.total)||0,nights:r.nights||0,
-          adults:r.adults||1,children:r.children||0,
-          status:r.status||'confirmed',source:r.source||'direct',
-          notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,
-          depositStatus:r.deposit_status||'not_collected',depositNote:r.deposit_note||'',
-          employer:r.employer||'',contractDuration:r.contract_duration||'',
-          contractStart:r.contract_start?r.contract_start.split('T')[0]:'',
-          contractEnd:r.contract_end?r.contract_end.split('T')[0]:'',
-          contractRef:r.contract_ref||'',created:r.created_at||new Date().toISOString()
-        }));
-      }
-
-      if(sPays&&sPays.length){
-        payments=sPays.map(p=>({
-          id:p.id,resId:p.res_id,invId:p.inv_id,
-          amount:parseFloat(p.amount)||0,
-          date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,
-          method:p.method||'Cash',note:p.note||''
-        }));
-      }
-
-      if(sInvs&&sInvs.length){
-        invoices=sInvs.map(i=>({
-          id:i.id,number:i.number,resId:i.res_id,
-          date:i.invoice_date?i.invoice_date.split('T')[0]:'',
-          periodFrom:i.period_from?i.period_from.split('T')[0]:'',
-          periodTo:i.period_to?i.period_to.split('T')[0]:'',
-          rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,
-          elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,
-          elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,
-          waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,
-          waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,
-          extras:i.extras||[],total:parseFloat(i.total)||0,
-          status:i.status||'draft',notes:i.notes||''
-        }));
-      }
-
-      if(sHk) housekeeping=sHk;
-      if(sMnt&&sMnt.length){
-        maintenance=sMnt.map(m=>({
-          id:m.id,number:m.number,apt:m.apt_id,title:m.title,
-          desc:m.description||'',priority:m.priority||'normal',
-          status:m.status||'open',assignedTo:m.assigned_to||'',
-          cost:parseFloat(m.cost)||0,notes:m.notes||'',created:m.created_at
-        }));
-      }
-
-      if(sCfg){
-        cfg.name=sCfg.property_name||cfg.name;
-        cfg.address=sCfg.address||cfg.address;
-        cfg.phone=sCfg.phone||cfg.phone;
-        cfg.tin=sCfg.tin||cfg.tin;
-        cfg.currency=sCfg.currency||cfg.currency;
-        cfg.checkin=sCfg.checkin_time||cfg.checkin;
-      }
-
-      // Normalize all dates
-      normalizeAllDates();
-
-      // Save to localStorage cache
-      save('pms_apts',apts);save('pms_res',reservations);
-      save('pms_guests',guests);save('pms_pays',payments);
-      save('pms_invoices',invoices);save('pms_cfg',cfg);
-
-      // Refresh UI
-      renderPage('dashboard');
-      updateHkBadge();
-      document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
-      console.log('✅ Server data loaded - '+reservations.length+' reservations');
-    }catch(e){console.warn('Server load error:',e);}
-  }
-
-  // Add logout button
-  const tr=document.getElementById('today-display');
-  if(tr){
-    const lb=document.createElement('button');
-    lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';
-    lb.onclick=async()=>{await api('POST','/logout');window.location.href='/login';};
-    tr.parentNode.appendChild(lb);
-  }
-
-  setTimeout(loadFromServer,300);
+async function loadFromServer(){
+  try{
+    const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
+    if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
+    if(sG&&sG.length)guests=sG.map(g=>({id:g.id,first:g.first_name,last:g.last_name,email:g.email||'',phone:g.phone||'',country:g.country||'',idNum:g.id_num||'',lang:g.lang||'en',notes:g.notes||''}));
+    if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
+    if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
+    if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
+    normalizeAllDates();
+    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    renderPage('dashboard');updateHkBadge();
+    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
+  }catch(e){console.warn('Server load error:',e);}
+}
+// Add logout button
+setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
+setTimeout(loadFromServer,400);
 }
 </script>
 </body>
@@ -3297,138 +3163,28 @@ function printNightAudit(){
   <p style="font-size:11px;margin-bottom:4px;"><strong>To clean:</strong> ${needCleaning.length?needCleaning.join(', '):'None'}</p>
   ${tmrCI.length?`<p style="font-size:11px;margin-top:4px;"><strong>Ready for tomorrow's check-ins:</strong> ${tmrCI.map(r=>aName(r.apt)).join(', ')}</p>`:''}
   <div class="footer"><div>Latika Residence · TIN: ${cfg.tin||'E116-2600001351'} · ${cfg.phone||'+855 972 304 710'}</div><div>Generated: ${new Date().toLocaleString('en-GB')}</div></div>
-  <script>window.onload=function(){window.print();};<\/script>
-<script>
-// ─── ONLINE API SYNC LAYER ───
-const IS_ONLINE = window.location.protocol === 'https:' || (window.location.hostname !== 'localhost' && !window.location.href.startsWith('file://'));
-
-async function api(method, path, body){
-  try{
-    const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
-    if(body) opts.body=JSON.stringify(body);
-    const r=await fetch('/api'+path,opts);
-    if(r.status===401){window.location.href='/login';return null;}
-    return r.ok?await r.json():null;
-  }catch(e){return null;}
-}
-
+  <script>window.onload=function(){window.print();};<\/script><script>
+const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=='localhost'&&!window.location.href.startsWith('file://'));
+async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
-  async function loadFromServer(){
-    try{
-      const [sApts,sGuests,sRes,sPays,sInvs,sHk,sMnt,sCfg]=await Promise.all([
-        api('GET','/apartments'),api('GET','/guests'),api('GET','/reservations'),
-        api('GET','/payments'),api('GET','/invoices'),api('GET','/housekeeping'),
-        api('GET','/maintenance'),api('GET','/settings')
-      ]);
-
-      if(sApts&&sApts.length){
-        apts=sApts.map(a=>({
-          id:a.id,name:a.name,type:a.type,floor:a.floor||'',
-          rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,
-          rateMonth:parseFloat(a.rate_month)||0,rate:parseFloat(a.rate_night)||0,
-          rateType:a.rate_type||'night',maxGuests:a.max_guests||2,
-          status:a.status||'available',allowExpat:a.allow_expat,
-          minContractMonths:a.min_contract_months||1,notes:a.notes||''
-        }));
-      }
-
-      if(sGuests&&sGuests.length){
-        guests=sGuests.map(g=>({
-          id:g.id,first:g.first_name,last:g.last_name,
-          email:g.email||'',phone:g.phone||'',
-          country:g.country||'',idNum:g.id_num||'',
-          lang:g.lang||'en',notes:g.notes||''
-        }));
-      }
-
-      if(sRes&&sRes.length){
-        reservations=sRes.map(r=>({
-          id:r.id,apt:r.apt_id,guest:r.guest_id,
-          checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,
-          checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,
-          rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',
-          total:parseFloat(r.total)||0,nights:r.nights||0,
-          adults:r.adults||1,children:r.children||0,
-          status:r.status||'confirmed',source:r.source||'direct',
-          notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,
-          depositStatus:r.deposit_status||'not_collected',depositNote:r.deposit_note||'',
-          employer:r.employer||'',contractDuration:r.contract_duration||'',
-          contractStart:r.contract_start?r.contract_start.split('T')[0]:'',
-          contractEnd:r.contract_end?r.contract_end.split('T')[0]:'',
-          contractRef:r.contract_ref||'',created:r.created_at||new Date().toISOString()
-        }));
-      }
-
-      if(sPays&&sPays.length){
-        payments=sPays.map(p=>({
-          id:p.id,resId:p.res_id,invId:p.inv_id,
-          amount:parseFloat(p.amount)||0,
-          date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,
-          method:p.method||'Cash',note:p.note||''
-        }));
-      }
-
-      if(sInvs&&sInvs.length){
-        invoices=sInvs.map(i=>({
-          id:i.id,number:i.number,resId:i.res_id,
-          date:i.invoice_date?i.invoice_date.split('T')[0]:'',
-          periodFrom:i.period_from?i.period_from.split('T')[0]:'',
-          periodTo:i.period_to?i.period_to.split('T')[0]:'',
-          rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,
-          elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,
-          elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,
-          waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,
-          waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,
-          extras:i.extras||[],total:parseFloat(i.total)||0,
-          status:i.status||'draft',notes:i.notes||''
-        }));
-      }
-
-      if(sHk) housekeeping=sHk;
-      if(sMnt&&sMnt.length){
-        maintenance=sMnt.map(m=>({
-          id:m.id,number:m.number,apt:m.apt_id,title:m.title,
-          desc:m.description||'',priority:m.priority||'normal',
-          status:m.status||'open',assignedTo:m.assigned_to||'',
-          cost:parseFloat(m.cost)||0,notes:m.notes||'',created:m.created_at
-        }));
-      }
-
-      if(sCfg){
-        cfg.name=sCfg.property_name||cfg.name;
-        cfg.address=sCfg.address||cfg.address;
-        cfg.phone=sCfg.phone||cfg.phone;
-        cfg.tin=sCfg.tin||cfg.tin;
-        cfg.currency=sCfg.currency||cfg.currency;
-        cfg.checkin=sCfg.checkin_time||cfg.checkin;
-      }
-
-      // Normalize all dates
-      normalizeAllDates();
-
-      // Save to localStorage cache
-      save('pms_apts',apts);save('pms_res',reservations);
-      save('pms_guests',guests);save('pms_pays',payments);
-      save('pms_invoices',invoices);save('pms_cfg',cfg);
-
-      // Refresh UI
-      renderPage('dashboard');
-      updateHkBadge();
-      document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
-      console.log('✅ Server data loaded - '+reservations.length+' reservations');
-    }catch(e){console.warn('Server load error:',e);}
-  }
-
-  // Add logout button
-  const tr=document.getElementById('today-display');
-  if(tr){
-    const lb=document.createElement('button');
-    lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';
-    lb.onclick=async()=>{await api('POST','/logout');window.location.href='/login';};
-    tr.parentNode.appendChild(lb);
-  }
-
-  setTimeout(loadFromServer,300);
+async function loadFromServer(){
+  try{
+    const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
+    if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
+    if(sG&&sG.length)guests=sG.map(g=>({id:g.id,first:g.first_name,last:g.last_name,email:g.email||'',phone:g.phone||'',country:g.country||'',idNum:g.id_num||'',lang:g.lang||'en',notes:g.notes||''}));
+    if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
+    if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
+    if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
+    normalizeAllDates();
+    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    renderPage('dashboard');updateHkBadge();
+    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
+  }catch(e){console.warn('Server load error:',e);}
+}
+// Add logout button
+setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
+setTimeout(loadFromServer,400);
 }
 </script>
 </body></html>`;
@@ -3584,138 +3340,28 @@ function printLease(){
     <div class="sig-box"><div class="sig-label">${T.tenantSig} — ${T.readApproved}</div><div class="sig-line">${T.date} ____/____/______</div></div>
   </div>
   <div class="footer"><div>${cfg.name||'Latika Residence'} · ${cfg.address||''}</div><div>${T.generated} ${fmtDate(todayStr())}</div></div>
-  <script>window.onload=function(){window.print();};<\/script>
-<script>
-// ─── ONLINE API SYNC LAYER ───
-const IS_ONLINE = window.location.protocol === 'https:' || (window.location.hostname !== 'localhost' && !window.location.href.startsWith('file://'));
-
-async function api(method, path, body){
-  try{
-    const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
-    if(body) opts.body=JSON.stringify(body);
-    const r=await fetch('/api'+path,opts);
-    if(r.status===401){window.location.href='/login';return null;}
-    return r.ok?await r.json():null;
-  }catch(e){return null;}
-}
-
+  <script>window.onload=function(){window.print();};<\/script><script>
+const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=='localhost'&&!window.location.href.startsWith('file://'));
+async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
-  async function loadFromServer(){
-    try{
-      const [sApts,sGuests,sRes,sPays,sInvs,sHk,sMnt,sCfg]=await Promise.all([
-        api('GET','/apartments'),api('GET','/guests'),api('GET','/reservations'),
-        api('GET','/payments'),api('GET','/invoices'),api('GET','/housekeeping'),
-        api('GET','/maintenance'),api('GET','/settings')
-      ]);
-
-      if(sApts&&sApts.length){
-        apts=sApts.map(a=>({
-          id:a.id,name:a.name,type:a.type,floor:a.floor||'',
-          rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,
-          rateMonth:parseFloat(a.rate_month)||0,rate:parseFloat(a.rate_night)||0,
-          rateType:a.rate_type||'night',maxGuests:a.max_guests||2,
-          status:a.status||'available',allowExpat:a.allow_expat,
-          minContractMonths:a.min_contract_months||1,notes:a.notes||''
-        }));
-      }
-
-      if(sGuests&&sGuests.length){
-        guests=sGuests.map(g=>({
-          id:g.id,first:g.first_name,last:g.last_name,
-          email:g.email||'',phone:g.phone||'',
-          country:g.country||'',idNum:g.id_num||'',
-          lang:g.lang||'en',notes:g.notes||''
-        }));
-      }
-
-      if(sRes&&sRes.length){
-        reservations=sRes.map(r=>({
-          id:r.id,apt:r.apt_id,guest:r.guest_id,
-          checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,
-          checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,
-          rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',
-          total:parseFloat(r.total)||0,nights:r.nights||0,
-          adults:r.adults||1,children:r.children||0,
-          status:r.status||'confirmed',source:r.source||'direct',
-          notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,
-          depositStatus:r.deposit_status||'not_collected',depositNote:r.deposit_note||'',
-          employer:r.employer||'',contractDuration:r.contract_duration||'',
-          contractStart:r.contract_start?r.contract_start.split('T')[0]:'',
-          contractEnd:r.contract_end?r.contract_end.split('T')[0]:'',
-          contractRef:r.contract_ref||'',created:r.created_at||new Date().toISOString()
-        }));
-      }
-
-      if(sPays&&sPays.length){
-        payments=sPays.map(p=>({
-          id:p.id,resId:p.res_id,invId:p.inv_id,
-          amount:parseFloat(p.amount)||0,
-          date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,
-          method:p.method||'Cash',note:p.note||''
-        }));
-      }
-
-      if(sInvs&&sInvs.length){
-        invoices=sInvs.map(i=>({
-          id:i.id,number:i.number,resId:i.res_id,
-          date:i.invoice_date?i.invoice_date.split('T')[0]:'',
-          periodFrom:i.period_from?i.period_from.split('T')[0]:'',
-          periodTo:i.period_to?i.period_to.split('T')[0]:'',
-          rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,
-          elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,
-          elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,
-          waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,
-          waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,
-          extras:i.extras||[],total:parseFloat(i.total)||0,
-          status:i.status||'draft',notes:i.notes||''
-        }));
-      }
-
-      if(sHk) housekeeping=sHk;
-      if(sMnt&&sMnt.length){
-        maintenance=sMnt.map(m=>({
-          id:m.id,number:m.number,apt:m.apt_id,title:m.title,
-          desc:m.description||'',priority:m.priority||'normal',
-          status:m.status||'open',assignedTo:m.assigned_to||'',
-          cost:parseFloat(m.cost)||0,notes:m.notes||'',created:m.created_at
-        }));
-      }
-
-      if(sCfg){
-        cfg.name=sCfg.property_name||cfg.name;
-        cfg.address=sCfg.address||cfg.address;
-        cfg.phone=sCfg.phone||cfg.phone;
-        cfg.tin=sCfg.tin||cfg.tin;
-        cfg.currency=sCfg.currency||cfg.currency;
-        cfg.checkin=sCfg.checkin_time||cfg.checkin;
-      }
-
-      // Normalize all dates
-      normalizeAllDates();
-
-      // Save to localStorage cache
-      save('pms_apts',apts);save('pms_res',reservations);
-      save('pms_guests',guests);save('pms_pays',payments);
-      save('pms_invoices',invoices);save('pms_cfg',cfg);
-
-      // Refresh UI
-      renderPage('dashboard');
-      updateHkBadge();
-      document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
-      console.log('✅ Server data loaded - '+reservations.length+' reservations');
-    }catch(e){console.warn('Server load error:',e);}
-  }
-
-  // Add logout button
-  const tr=document.getElementById('today-display');
-  if(tr){
-    const lb=document.createElement('button');
-    lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';
-    lb.onclick=async()=>{await api('POST','/logout');window.location.href='/login';};
-    tr.parentNode.appendChild(lb);
-  }
-
-  setTimeout(loadFromServer,300);
+async function loadFromServer(){
+  try{
+    const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
+    if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
+    if(sG&&sG.length)guests=sG.map(g=>({id:g.id,first:g.first_name,last:g.last_name,email:g.email||'',phone:g.phone||'',country:g.country||'',idNum:g.id_num||'',lang:g.lang||'en',notes:g.notes||''}));
+    if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
+    if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
+    if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
+    normalizeAllDates();
+    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    renderPage('dashboard');updateHkBadge();
+    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
+  }catch(e){console.warn('Server load error:',e);}
+}
+// Add logout button
+setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
+setTimeout(loadFromServer,400);
 }
 </script>
 </body></html>`;
@@ -3890,138 +3536,28 @@ setTimeout(()=>{const el=document.getElementById('audit-date');if(el)el.value=to
 // load Chart.js in background so it's ready when user opens analytics
 loadChartJs(()=>buildChart('revenue'));
 </script>
-
 <script>
-// ─── ONLINE API SYNC LAYER ───
-const IS_ONLINE = window.location.protocol === 'https:' || (window.location.hostname !== 'localhost' && !window.location.href.startsWith('file://'));
-
-async function api(method, path, body){
-  try{
-    const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};
-    if(body) opts.body=JSON.stringify(body);
-    const r=await fetch('/api'+path,opts);
-    if(r.status===401){window.location.href='/login';return null;}
-    return r.ok?await r.json():null;
-  }catch(e){return null;}
-}
-
+const IS_ONLINE=window.location.protocol==='https:'||(window.location.hostname!=='localhost'&&!window.location.href.startsWith('file://'));
+async function apiCall(method,path,body){try{const opts={method,headers:{'Content-Type':'application/json'},credentials:'include'};if(body)opts.body=JSON.stringify(body);const r=await fetch('/api'+path,opts);if(r.status===401){window.location.href='/login';return null;}return r.ok?await r.json():null;}catch(e){return null;}}
 if(IS_ONLINE){
-  async function loadFromServer(){
-    try{
-      const [sApts,sGuests,sRes,sPays,sInvs,sHk,sMnt,sCfg]=await Promise.all([
-        api('GET','/apartments'),api('GET','/guests'),api('GET','/reservations'),
-        api('GET','/payments'),api('GET','/invoices'),api('GET','/housekeeping'),
-        api('GET','/maintenance'),api('GET','/settings')
-      ]);
-
-      if(sApts&&sApts.length){
-        apts=sApts.map(a=>({
-          id:a.id,name:a.name,type:a.type,floor:a.floor||'',
-          rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,
-          rateMonth:parseFloat(a.rate_month)||0,rate:parseFloat(a.rate_night)||0,
-          rateType:a.rate_type||'night',maxGuests:a.max_guests||2,
-          status:a.status||'available',allowExpat:a.allow_expat,
-          minContractMonths:a.min_contract_months||1,notes:a.notes||''
-        }));
-      }
-
-      if(sGuests&&sGuests.length){
-        guests=sGuests.map(g=>({
-          id:g.id,first:g.first_name,last:g.last_name,
-          email:g.email||'',phone:g.phone||'',
-          country:g.country||'',idNum:g.id_num||'',
-          lang:g.lang||'en',notes:g.notes||''
-        }));
-      }
-
-      if(sRes&&sRes.length){
-        reservations=sRes.map(r=>({
-          id:r.id,apt:r.apt_id,guest:r.guest_id,
-          checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,
-          checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,
-          rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',
-          total:parseFloat(r.total)||0,nights:r.nights||0,
-          adults:r.adults||1,children:r.children||0,
-          status:r.status||'confirmed',source:r.source||'direct',
-          notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,
-          depositStatus:r.deposit_status||'not_collected',depositNote:r.deposit_note||'',
-          employer:r.employer||'',contractDuration:r.contract_duration||'',
-          contractStart:r.contract_start?r.contract_start.split('T')[0]:'',
-          contractEnd:r.contract_end?r.contract_end.split('T')[0]:'',
-          contractRef:r.contract_ref||'',created:r.created_at||new Date().toISOString()
-        }));
-      }
-
-      if(sPays&&sPays.length){
-        payments=sPays.map(p=>({
-          id:p.id,resId:p.res_id,invId:p.inv_id,
-          amount:parseFloat(p.amount)||0,
-          date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,
-          method:p.method||'Cash',note:p.note||''
-        }));
-      }
-
-      if(sInvs&&sInvs.length){
-        invoices=sInvs.map(i=>({
-          id:i.id,number:i.number,resId:i.res_id,
-          date:i.invoice_date?i.invoice_date.split('T')[0]:'',
-          periodFrom:i.period_from?i.period_from.split('T')[0]:'',
-          periodTo:i.period_to?i.period_to.split('T')[0]:'',
-          rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,
-          elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,
-          elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,
-          waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,
-          waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,
-          extras:i.extras||[],total:parseFloat(i.total)||0,
-          status:i.status||'draft',notes:i.notes||''
-        }));
-      }
-
-      if(sHk) housekeeping=sHk;
-      if(sMnt&&sMnt.length){
-        maintenance=sMnt.map(m=>({
-          id:m.id,number:m.number,apt:m.apt_id,title:m.title,
-          desc:m.description||'',priority:m.priority||'normal',
-          status:m.status||'open',assignedTo:m.assigned_to||'',
-          cost:parseFloat(m.cost)||0,notes:m.notes||'',created:m.created_at
-        }));
-      }
-
-      if(sCfg){
-        cfg.name=sCfg.property_name||cfg.name;
-        cfg.address=sCfg.address||cfg.address;
-        cfg.phone=sCfg.phone||cfg.phone;
-        cfg.tin=sCfg.tin||cfg.tin;
-        cfg.currency=sCfg.currency||cfg.currency;
-        cfg.checkin=sCfg.checkin_time||cfg.checkin;
-      }
-
-      // Normalize all dates
-      normalizeAllDates();
-
-      // Save to localStorage cache
-      save('pms_apts',apts);save('pms_res',reservations);
-      save('pms_guests',guests);save('pms_pays',payments);
-      save('pms_invoices',invoices);save('pms_cfg',cfg);
-
-      // Refresh UI
-      renderPage('dashboard');
-      updateHkBadge();
-      document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
-      console.log('✅ Server data loaded - '+reservations.length+' reservations');
-    }catch(e){console.warn('Server load error:',e);}
-  }
-
-  // Add logout button
-  const tr=document.getElementById('today-display');
-  if(tr){
-    const lb=document.createElement('button');
-    lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';
-    lb.onclick=async()=>{await api('POST','/logout');window.location.href='/login';};
-    tr.parentNode.appendChild(lb);
-  }
-
-  setTimeout(loadFromServer,300);
+async function loadFromServer(){
+  try{
+    const[sA,sG,sR,sP,sI]=await Promise.all([apiCall('GET','/apartments'),apiCall('GET','/guests'),apiCall('GET','/reservations'),apiCall('GET','/payments'),apiCall('GET','/invoices')]);
+    if(sA&&sA.length)apts=sA.map(a=>({id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''}));
+    if(sG&&sG.length)guests=sG.map(g=>({id:g.id,first:g.first_name,last:g.last_name,email:g.email||'',phone:g.phone||'',country:g.country||'',idNum:g.id_num||'',lang:g.lang||'en',notes:g.notes||''}));
+    if(sR&&sR.length)reservations=sR.map(r=>({id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:r.checkin?r.checkin.split('T')[0]:r.checkin,checkout:r.checkout?r.checkout.split('T')[0]:r.checkout,rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''}));
+    if(sP&&sP.length)payments=sP.map(p=>({id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:p.payment_date?p.payment_date.split('T')[0]:p.payment_date,method:p.method||'Cash',note:p.note||''}));
+    if(sI&&sI.length)invoices=sI.map(i=>({id:i.id,number:i.number,resId:i.res_id,date:i.invoice_date?i.invoice_date.split('T')[0]:'',periodFrom:i.period_from?i.period_from.split('T')[0]:'',periodTo:i.period_to?i.period_to.split('T')[0]:'',rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''}));
+    normalizeAllDates();
+    save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
+    renderPage('dashboard');updateHkBadge();
+    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
+  }catch(e){console.warn('Server load error:',e);}
+}
+// Add logout button
+setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
+setTimeout(loadFromServer,400);
 }
 </script>
 </body>
