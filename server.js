@@ -14,7 +14,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'latika-pms-secret-2024',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 30*24*60*60*1000, httpOnly: true, secure: false, sameSite: "none", sameSite: 'lax' },
+  cookie: { maxAge: 30*24*60*60*1000, httpOnly: true, secure: false, sameSite: 'lax' },
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,15 +30,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
 
-app.get('/health', (req, res) => res.json({
-  status: 'ok',
-  timestamp: new Date().toISOString(),
-  adminUser: process.env.ADMIN_USERNAME || 'admin (default)',
-  adminPassSet: !!process.env.ADMIN_PASSWORD
-}));
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 app.listen(PORT, () => {
   console.log('✅ Latika Residence PMS running on port ' + PORT);
-  console.log('👤 Admin: ' + (process.env.ADMIN_USERNAME || 'admin'));
-  console.log('🔑 Password set: ' + !!process.env.ADMIN_PASSWORD);
 });
