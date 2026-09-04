@@ -62,9 +62,11 @@ async function login() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ username, password }),
+      credentials: 'include', body: JSON.stringify({ username, password }),
     });
-    if (res.ok) {
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      if (data.token) localStorage.setItem('pms_auth_token', data.token);
       window.location.href = '/';
     } else {
       errEl.textContent = 'Invalid username or password.';

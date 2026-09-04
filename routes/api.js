@@ -5,24 +5,28 @@ const bcrypt = require('bcryptjs');
 
 // ─── Auth middleware ───
 function requireAuth(req, res, next) {
-  if (req.session && req.session.user) return next();
+  if (req.session && req.session.user) return next(); const token = req.headers["x-auth-token"]; if (token === (process.env.ADMIN_PASSWORD || "Latika2024")) return next();
+  // Also accept token in header for browsers that block cookies
+  const token = req.headers['x-auth-token'];
+  if (token === (process.env.ADMIN_PASSWORD || 'Latika2024')) return next();
   res.status(401).json({ error: 'Unauthorized' });
 }
 
 // ─── Auth ───
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  console.log('Login attempt:', username, '| ENV user:', process.env.ADMIN_USERNAME, '| ENV pass set:', !!process.env.ADMIN_PASSWORD);
-  const envUser = process.env.ADMIN_USERNAME || 'admin';
-  const envPass = process.env.ADMIN_PASSWORD || 'Latika2024';
-  if (username === envUser && password === envPass) {
+  // Fixed credentials — change these directly in code if needed
+  const validUser = process.env.ADMIN_USERNAME || 'admin';
+  const validPass = process.env.ADMIN_PASSWORD || 'Latika2024';
+  console.log('Login attempt - user:', username, '| valid:', validUser, '| passMatch:', password === validPass, '| envPassSet:', !!process.env.ADMIN_PASSWORD);
+  if (username === validUser && password === validPass) {
     req.session.user = { username };
     req.session.save((err) => {
-      if (err) { console.error('Session save error:', err); return res.status(500).json({ error: 'Session error' }); }
-      res.json({ ok: true });
+      if (err) console.error('Session error:', err);
     });
+    console.log('Login successful for:', username);
+    res.json({ ok: true, token: validPass });
   } else {
-    console.log('Login failed — expected:', envUser, '/', envPass, '| got:', username, '/', password);
     res.status(401).json({ error: 'Invalid credentials' });
   }
 });

@@ -42,13 +42,11 @@ app.use('/api', apiRoutes);
 
 // ─── Login page ───
 app.get('/login', (req, res) => {
-  if (req.session && req.session.user) return res.redirect('/');
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// ─── Main app — protected ───
+// ─── Main app — serve directly (auth handled in app via API) ───
 app.get('/', (req, res) => {
-  if (!req.session || !req.session.user) return res.redirect('/login');
   res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
 

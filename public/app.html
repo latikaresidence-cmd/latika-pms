@@ -3468,7 +3468,7 @@ loadChartJs(()=>buildChart('revenue'));
   if(!IS_ONLINE) return;
   
   function api(method, path, body){
-    var opts = {method:method, headers:{'Content-Type':'application/json'}, credentials:'include'};
+    var token = localStorage.getItem('pms_auth_token') || ''; var opts = {method:method, headers:{'Content-Type':'application/json','x-auth-token':token}, credentials:'include'};
     if(body) opts.body = JSON.stringify(body);
     return fetch('/api'+path, opts).then(function(r){
       if(r.status===401){window.location.href='/login';return null;}
