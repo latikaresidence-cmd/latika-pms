@@ -31,12 +31,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'latika-pms-secret-2024',
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    httpOnly: false,
-    secure: false,
-    sameSite: 'lax',
-  },
+  cookie: { maxAge: 30*24*60*60*1000, httpOnly: false, secure: true, sameSite: 'none' },
 }));
 
 // ─── Static files ───
