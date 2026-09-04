@@ -2535,13 +2535,21 @@ async function loadFromServer(){
       save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
     }
     if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
-    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    try{const sb=document.getElementById('sb-prop-name');if(sb&&typeof cfg!=='undefined')sb.textContent=cfg.name||'Latika Residence';}catch(e){}
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
 }
 // Add logout button
 setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
-setTimeout(loadFromServer,400);
+// Wait for main PMS script to initialize before loading from server
+function waitAndLoad(){
+  if(typeof cfg!=='undefined'&&typeof reservations!=='undefined'&&typeof renderPage!=='undefined'){
+    loadFromServer();
+  } else {
+    setTimeout(waitAndLoad,100);
+  }
+}
+setTimeout(waitAndLoad,300);
 }
 </script>
 </body>
@@ -3190,13 +3198,21 @@ async function loadFromServer(){
       save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
     }
     if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
-    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    try{const sb=document.getElementById('sb-prop-name');if(sb&&typeof cfg!=='undefined')sb.textContent=cfg.name||'Latika Residence';}catch(e){}
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
 }
 // Add logout button
 setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
-setTimeout(loadFromServer,400);
+// Wait for main PMS script to initialize before loading from server
+function waitAndLoad(){
+  if(typeof cfg!=='undefined'&&typeof reservations!=='undefined'&&typeof renderPage!=='undefined'){
+    loadFromServer();
+  } else {
+    setTimeout(waitAndLoad,100);
+  }
+}
+setTimeout(waitAndLoad,300);
 }
 </script>
 </body></html>`;
@@ -3373,13 +3389,21 @@ async function loadFromServer(){
       save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
     }
     if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
-    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    try{const sb=document.getElementById('sb-prop-name');if(sb&&typeof cfg!=='undefined')sb.textContent=cfg.name||'Latika Residence';}catch(e){}
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
 }
 // Add logout button
 setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
-setTimeout(loadFromServer,400);
+// Wait for main PMS script to initialize before loading from server
+function waitAndLoad(){
+  if(typeof cfg!=='undefined'&&typeof reservations!=='undefined'&&typeof renderPage!=='undefined'){
+    loadFromServer();
+  } else {
+    setTimeout(waitAndLoad,100);
+  }
+}
+setTimeout(waitAndLoad,300);
 }
 </script>
 </body></html>`;
@@ -3575,13 +3599,21 @@ async function loadFromServer(){
       save('pms_apts',apts);save('pms_res',reservations);save('pms_guests',guests);save('pms_pays',payments);save('pms_invoices',invoices);
     }
     if(typeof renderPage!=='undefined'){renderPage('dashboard');updateHkBadge();}
-    const sb=document.getElementById('sb-prop-name');if(sb)sb.textContent=cfg.name||'Latika Residence';
+    try{const sb=document.getElementById('sb-prop-name');if(sb&&typeof cfg!=='undefined')sb.textContent=cfg.name||'Latika Residence';}catch(e){}
     console.log('Server data loaded: '+reservations.length+' reservations, '+guests.length+' guests');
   }catch(e){console.warn('Server load error:',e);}
 }
 // Add logout button
 setTimeout(()=>{const tr=document.getElementById('today-display');if(tr&&!document.getElementById('logout-btn')){const lb=document.createElement('button');lb.id='logout-btn';lb.className='btn btn-sm';lb.textContent='🚪 Logout';lb.style.marginLeft='8px';lb.onclick=async()=>{await apiCall('POST','/logout');window.location.href='/login';};tr.parentNode.appendChild(lb);}},500);
-setTimeout(loadFromServer,400);
+// Wait for main PMS script to initialize before loading from server
+function waitAndLoad(){
+  if(typeof cfg!=='undefined'&&typeof reservations!=='undefined'&&typeof renderPage!=='undefined'){
+    loadFromServer();
+  } else {
+    setTimeout(waitAndLoad,100);
+  }
+}
+setTimeout(waitAndLoad,300);
 }
 </script>
 </body>
