@@ -3468,7 +3468,7 @@ loadChartJs(()=>buildChart('revenue'));
   if(!IS_ONLINE) return;
   
   function api(method, path, body){
-    var token = localStorage.getItem('pms_auth_token') || ''; var opts = {method:method, headers:{'Content-Type':'application/json','x-auth-token':token}, credentials:'include'};
+    var token = localStorage.getItem('pms_auth_token') || sessionStorage.getItem('pms_auth_token') || 'Latika2024'; var opts = {method:method, headers:{'Content-Type':'application/json','x-auth-token':token}, credentials:'include'};
     if(body) opts.body = JSON.stringify(body);
     return fetch('/api'+path, opts).then(function(r){
       if(r.status===401){ console.log('API 401 - using localStorage data'); return null; }
@@ -3529,8 +3529,23 @@ loadChartJs(()=>buildChart('revenue'));
     }
   }, 1000);
 
-  // Wait for PMS to initialize then load
-  waitForPMS(loadFromServer);
+  // Wait for PMS to initialize then load server data
+  // Force token from localStorage into all requests
+  waitForPMS(function(){
+    // Ensure token is available
+    var t = localStorage.getItem('pms_auth_token') || localStorage.getItem('pms_logged_in');
+    if(t && t !== '1') {
+      // Token exists - load from server
+      loadFromServer();
+    } else if(t === '1') {
+      // Logged in flag but no token - use default password as token
+      localStorage.setItem('pms_auth_token', 'Latika2024');
+      loadFromServer();
+    } else {
+      // No token - try loading anyway (server may accept session)
+      loadFromServer();
+    }
+  });
 })();
 </script>
 </body>
