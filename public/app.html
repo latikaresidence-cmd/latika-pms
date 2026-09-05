@@ -3524,7 +3524,7 @@ loadChartJs(()=>buildChart('revenue'));
       var lb = document.createElement('button');
       lb.id='logout-btn'; lb.className='btn btn-sm';
       lb.textContent='Logout'; lb.style.marginLeft='8px';
-      lb.onclick = function(){ api('POST','/logout').then(function(){ window.location.href='/login'; }); };
+      lb.onclick = function(){ localStorage.removeItem('pms_auth_token'); localStorage.removeItem('pms_logged_in'); api('POST','/logout'); window.location.href='/login'; };
       tr.parentNode.appendChild(lb);
     }
   }, 1000);
