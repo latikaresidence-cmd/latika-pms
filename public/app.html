@@ -1367,9 +1367,13 @@ function renderCal(){
     });
     // Booking bars
     reservations.filter(r=>r.apt===apt.id&&r.status!=='cancelled').forEach(r=>{
+      // Only show if reservation overlaps with visible date range
+      const firstDate=dates[0];
+      const lastDate=dates[dates.length-1];
+      if(r.checkout<=firstDate||r.checkin>lastDate)return; // no overlap
       const s=Math.max(0,dates.indexOf(r.checkin));
       let e=dates.indexOf(r.checkout);
-      if(e===-1&&r.checkout>dates[dates.length-1])e=dates.length;
+      if(e===-1&&r.checkout>lastDate)e=dates.length;
       if(s===-1||e<=s)return;
       const cw=100/dates.length;
       const left=s*cw,width=(e-s)*cw;
