@@ -3580,8 +3580,8 @@ loadChartJs(()=>buildChart('revenue'));
       if(sP && sP.length) payments=sP.map(function(p){return {id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:nd(p.payment_date),method:p.method||'Cash',note:p.note||''};});
       if(sI && sI.length) invoices=sI.map(function(i){return {id:i.id,number:i.number,resId:i.res_id,date:nd(i.invoice_date),periodFrom:nd(i.period_from),periodTo:nd(i.period_to),rentLabel:i.rent_label||'Monthly Rent',rent:parseFloat(i.rent)||0,elecOn:i.elec_on,elecPrev:i.elec_prev,elecCurr:i.elec_curr,elecPrice:i.elec_price,elecAmount:parseFloat(i.elec_amount)||0,waterOn:i.water_on,waterPrev:i.water_prev,waterCurr:i.water_curr,waterPrice:i.water_price,waterAmount:parseFloat(i.water_amount)||0,extras:i.extras||[],total:parseFloat(i.total)||0,status:i.status||'draft',notes:i.notes||''};});
       
-      save('pms_apts',apts); save('pms_res',reservations);
-      save('pms_guests',guests); save('pms_pays',payments); save('pms_invoices',invoices);
+      // Only cache non-critical data - reservations always come from server
+      save('pms_apts',apts);
       renderPage('dashboard');
       updateHkBadge();
       console.log('Server data loaded: '+reservations.length+' reservations');
@@ -3600,22 +3600,21 @@ loadChartJs(()=>buildChart('revenue'));
     }
   }, 1000);
 
-  // Wait for PMS to initialize then load server data
-  // Force token from localStorage into all requests
+  // ALWAYS load from server - never trust localStorage for reservations/guests
+  // This ensures PostgreSQL is always the source of truth
   waitForPMS(function(){
-    // Ensure token is available
-    var t = localStorage.getItem('pms_auth_token') || localStorage.getItem('pms_logged_in');
-    if(t && t !== '1') {
-      // Token exists - load from server
-      loadFromServer();
-    } else if(t === '1') {
-      // Logged in flag but no token - use default password as token
-      localStorage.setItem('pms_auth_token', 'Latika2024');
-      loadFromServer();
-    } else {
-      // No token - try loading anyway (server may accept session)
-      loadFromServer();
-    }
+    localStorage.setItem('pms_auth_token', 'Latika2024');
+    // Clear stale localStorage data before loading from server
+    localStorage.removeItem('pms_res');
+    localStorage.removeItem('pms_guests');
+    localStorage.removeItem('pms_pays');
+    localStorage.removeItem('pms_invoices');
+    localStorage.removeItem('pms_hk');
+    reservations = [];
+    guests = [];
+    payments = [];
+    invoices = [];
+    loadFromServer();
   });
 })();
 </script>
