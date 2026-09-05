@@ -3456,6 +3456,11 @@ document.getElementById('today-display').textContent=new Date().toLocaleDateStri
 document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
 renderDash();
 updateHkBadge();
+// Update sidebar mode indicator
+if(typeof IS_ONLINE !== 'undefined' && IS_ONLINE){
+  var sub = document.querySelector('.property-badge-sub');
+  if(sub) sub.textContent = '6 Apartments · Online';
+}
 // Set night audit default date
 setTimeout(()=>{const el=document.getElementById('audit-date');if(el)el.value=todayStr();},100);
 // load Chart.js in background so it's ready when user opens analytics
