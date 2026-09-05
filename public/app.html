@@ -119,6 +119,29 @@ select.form-control{cursor:pointer}
 </style>
 </head>
 <body>
+
+<!-- BUILT-IN LOGIN OVERLAY -->
+<div id="login-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#F7F8FA;z-index:99999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px;">
+      <div style="width:44px;height:44px;background:#0298B2;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:800;">L</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#1A1D23;">Latika Residence</div>
+        <div style="font-size:12px;color:#9299A8;">Property Management System</div>
+      </div>
+    </div>
+    <h2 style="font-size:18px;font-weight:700;color:#1A1D23;margin-bottom:6px;">Welcome back</h2>
+    <p style="font-size:13px;color:#9299A8;margin-bottom:24px;">Sign in to access your PMS</p>
+    <div id="login-error" style="background:#FEE2E2;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;">Invalid password.</div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:500;color:#5A6072;margin-bottom:6px;">Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" style="width:100%;padding:10px 14px;border:1px solid #E2E5EC;border-radius:8px;font-size:14px;color:#1A1D23;" autocomplete="current-password">
+    </div>
+    <button onclick="doLogin()" style="width:100%;padding:12px;background:#0298B2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
+    <div style="text-align:center;font-size:11px;color:#9299A8;margin-top:24px;">Latika Residence · Siem Reap, Cambodia</div>
+  </div>
+</div>
+
 <div class="app">
 <aside class="sidebar">
   <div class="logo">
@@ -3449,6 +3472,44 @@ function openWhatsApp(){
   window.open(url,'_blank');
 }
 
+
+// ─── BUILT-IN AUTH ───
+var PMS_TOKEN = localStorage.getItem('pms_auth_token') || '';
+var PMS_VALID_PASS = 'Latika2024';
+
+function checkAuth(){
+  if(!PMS_TOKEN || PMS_TOKEN !== PMS_VALID_PASS){
+    document.getElementById('login-overlay').style.display = 'flex';
+    setTimeout(function(){ 
+      var p = document.getElementById('login-pass');
+      if(p) p.focus();
+    }, 100);
+    return false;
+  }
+  document.getElementById('login-overlay').style.display = 'none';
+  return true;
+}
+
+function doLogin(){
+  var pass = document.getElementById('login-pass').value;
+  var errEl = document.getElementById('login-error');
+  if(pass === PMS_VALID_PASS){
+    PMS_TOKEN = pass;
+    localStorage.setItem('pms_auth_token', pass);
+    localStorage.setItem('pms_logged_in','1');
+    document.getElementById('login-overlay').style.display = 'none';
+    // Load data from server
+    if(typeof loadFromServer === 'function') loadFromServer();
+    errEl.style.display = 'none';
+  } else {
+    errEl.style.display = 'block';
+  }
+}
+
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter' && document.getElementById('login-overlay').style.display !== 'none') doLogin();
+});
+
 // ─────────────────────────────
 // INIT
 // ─────────────────────────────
@@ -3456,6 +3517,7 @@ document.getElementById('today-display').textContent=new Date().toLocaleDateStri
 document.getElementById('sb-prop-name').textContent=cfg.name||'Latika Residence';
 renderDash();
 updateHkBadge();
+checkAuth();
 // Update sidebar mode indicator
 if(typeof IS_ONLINE !== 'undefined' && IS_ONLINE){
   var sub = document.querySelector('.property-badge-sub');
