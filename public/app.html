@@ -584,9 +584,7 @@ select.form-control{cursor:pointer}
         <div class="form-group"><label class="form-label" id="mres-rate-label">Rate (per night) *</label><input type="number" class="form-control" id="mres-rate" placeholder="0.00" oninput="calcTotal()"></div>
         <div class="form-group"><label class="form-label">Total Amount</label><input type="text" class="form-control" id="mres-total" readonly style="background:var(--surface2);font-weight:600;"></div>
       </div>
-      <div id="mres-expat-info" style="display:none;background:var(--purple-light);border:1px solid #d8b4fe;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:12px;color:#5b21b6;">
-        ✈️ <strong>Expat apartment</strong> — min. contract: <strong><span id="mres-expat-min">12</span> month(s)</strong>. Fill in the contract details below.
-      </div>
+      
       <div class="form-row">
         <div class="form-group"><label class="form-label">Adults</label><input type="number" class="form-control" id="mres-adults" value="1" min="1"></div>
         <div class="form-group"><label class="form-label">Children</label><input type="number" class="form-control" id="mres-children" value="0" min="0"></div>
@@ -624,7 +622,7 @@ select.form-control{cursor:pointer}
         </div>
       </div>
       <div id="mres-expat-fields" style="display:none;border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
-        <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:12px;">✈️ Expat / Long-Stay Contract</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;">Contract Details (optional)</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Employer / Company</label><input type="text" class="form-control" id="mres-employer" placeholder="Company name"></div>
           <div class="form-group"><label class="form-label">Contract Duration</label>
@@ -939,52 +937,11 @@ select.form-control{cursor:pointer}
       <!-- PRICING SECTION -->
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;margin-bottom:4px;">
         <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;">💰 Pricing</div>
-        <div class="form-group">
-          <label class="form-label">Default billing period</label>
-          <div style="display:flex;gap:8px;">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;" id="rt-night-lbl">
-              <input type="radio" name="mapt-rate-type" value="night" id="rt-night" onchange="onRateTypeChange()"> 🌙 Per night
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;" id="rt-week-lbl">
-              <input type="radio" name="mapt-rate-type" value="week" id="rt-week" onchange="onRateTypeChange()"> 📅 Per week
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;" id="rt-month-lbl">
-              <input type="radio" name="mapt-rate-type" value="month" id="rt-month" onchange="onRateTypeChange()"> 🗓️ Per month
-            </label>
-          </div>
-        </div>
-        <div class="form-row-3">
+        <div class="form-row">
           <div class="form-group"><label class="form-label">Nightly rate</label><input type="number" class="form-control" id="mapt-rate-night" placeholder="0.00"></div>
-          <div class="form-group"><label class="form-label">Weekly rate</label><input type="number" class="form-control" id="mapt-rate-week" placeholder="0.00"></div>
-          <div class="form-group"><label class="form-label">Monthly rate</label><input type="number" class="form-control" id="mapt-rate-month" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Max guests</label><input type="number" class="form-control" id="mapt-max" value="2" min="1" max="10"></div>
         </div>
-        <div id="rate-hint" style="font-size:11px;color:var(--text3);margin-top:-8px;margin-bottom:12px;"></div>
-      </div>
-
-      <!-- EXPAT SECTION -->
-      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;margin-bottom:4px;">
-        <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:12px;">✈️ Expat / Long-Stay</div>
-        <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-          <input type="checkbox" id="mapt-allow-expat" onchange="onExpatToggle()" style="width:16px;height:16px;cursor:pointer;">
-          <label for="mapt-allow-expat" style="font-size:13px;cursor:pointer;color:var(--text);">This apartment accepts expat / long-stay contracts</label>
-        </div>
-        <div id="mapt-expat-options" style="display:none;">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Minimum contract (months)</label>
-              <select class="form-control" id="mapt-min-contract">
-                <option value="1">1 month</option><option value="3">3 months</option>
-                <option value="6">6 months</option><option value="12">12 months (1 year)</option>
-                <option value="24">24 months (2 years)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Max guests</label>
-              <input type="number" class="form-control" id="mapt-max" value="2" min="1" max="10">
-            </div>
-          </div>
-        </div>
-        <div id="mapt-expat-off" style="font-size:12px;color:var(--text3);margin-top:4px;">Short-stay only (nightly / weekly bookings).</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:-8px;margin-bottom:12px;">Total = nightly rate × nights. Override the rate per booking for discounts.</div>
       </div>
 
       <div class="form-group"><label class="form-label">Status</label>
@@ -1004,12 +961,12 @@ select.form-control{cursor:pointer}
 // DATA
 // ─────────────────────────────
 const DEFAULT_APTS = [
-  {id:'a1',name:'Apt 101',type:'1br',floor:'1st Floor',rateNight:80,rateWeek:490,rateMonth:1600,rateType:'night',maxGuests:2,status:'available',notes:'Garden view',allowExpat:true,minContractMonths:1},
-  {id:'a2',name:'Apt 102',type:'1br',floor:'1st Floor',rateNight:80,rateWeek:490,rateMonth:1600,rateType:'night',maxGuests:2,status:'available',notes:'',allowExpat:true,minContractMonths:1},
-  {id:'a3',name:'Apt 201',type:'1br',floor:'2nd Floor',rateNight:90,rateWeek:560,rateMonth:1800,rateType:'night',maxGuests:2,status:'available',notes:'City view',allowExpat:true,minContractMonths:1},
-  {id:'a4',name:'Apt 202',type:'1br',floor:'2nd Floor',rateNight:90,rateWeek:560,rateMonth:1800,rateType:'night',maxGuests:2,status:'available',notes:'',allowExpat:true,minContractMonths:1},
-  {id:'a5',name:'Apt 301',type:'2br',floor:'3rd Floor',rateNight:130,rateWeek:800,rateMonth:2600,rateType:'night',maxGuests:4,status:'available',notes:'Panoramic view, 2 bathrooms',allowExpat:true,minContractMonths:1},
-  {id:'a6',name:'Apt 302',type:'2br',floor:'3rd Floor',rateNight:130,rateWeek:800,rateMonth:2600,rateType:'night',maxGuests:4,status:'available',notes:'Corner suite',allowExpat:true,minContractMonths:1},
+  {id:'a1',name:'Apt 101',type:'1br',floor:'1st Floor',rateNight:80,rateType:'night',maxGuests:2,status:'available',notes:'Garden view'},
+  {id:'a2',name:'Apt 102',type:'1br',floor:'1st Floor',rateNight:80,rateType:'night',maxGuests:2,status:'available',notes:''},
+  {id:'a3',name:'Apt 201',type:'1br',floor:'2nd Floor',rateNight:90,rateType:'night',maxGuests:2,status:'available',notes:'City view'},
+  {id:'a4',name:'Apt 202',type:'1br',floor:'2nd Floor',rateNight:90,rateType:'night',maxGuests:2,status:'available',notes:''},
+  {id:'a5',name:'Apt 301',type:'2br',floor:'3rd Floor',rateNight:130,rateType:'night',maxGuests:4,status:'available',notes:'Panoramic view, 2 bathrooms'},
+  {id:'a6',name:'Apt 302',type:'2br',floor:'3rd Floor',rateNight:130,rateType:'night',maxGuests:4,status:'available',notes:'Corner suite'},
 ];
 
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
@@ -1043,27 +1000,11 @@ function aName(id){const a=apts.find(x=>x.id===id);return a?a.name:'—';}
 
 // Returns the active rate for an apartment and the label
 function aptRate(a){
-  const rt=a.rateType||'night';
-  if(rt==='week')return{rate:a.rateWeek||0,label:'/week',labelFull:'per week'};
-  if(rt==='month')return{rate:a.rateMonth||0,label:'/month',labelFull:'per month'};
-  return{rate:a.rateNight||a.rate||0,label:'/night',labelFull:'per night'};
+  return{rate:a.rateNight||a.rate||0,label:'/night'};
 }
-
-// Convert any rate to a per-night equivalent for conflict-free total calculation
 function calcResTotal(a, checkin, checkout){
-  const rt=a.rateType||'night';
-  const n=nights(checkin,checkout);
-  if(rt==='night') return {units:n, unitLabel:'night', rate:a.rateNight||a.rate||0, total:(a.rateNight||a.rate||0)*n};
-  if(rt==='week'){
-    const weeks=n/7;
-    const r=a.rateWeek||0;
-    return {units:parseFloat(weeks.toFixed(2)), unitLabel:'week', rate:r, total:r*weeks};
-  }
-  if(rt==='month'){
-    const months=n/30.44;
-    const r=a.rateMonth||0;
-    return {units:parseFloat(months.toFixed(2)), unitLabel:'month', rate:r, total:r*months};
-  }
+  const r=aptRate(a).rate,n=nights(checkin,checkout);
+  return cfg.currency+(r*n).toFixed(2);
 }
 function stBadge(s){
   const m={confirmed:'badge-blue',  'checked-in':'badge-green','checked-out':'badge-gray',cancelled:'badge-red'};
@@ -1156,7 +1097,6 @@ function renderDash(){
       ${inner}
       <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--text3);">${cur(aptRate(apt).rate)}${aptRate(apt).label}</span>
-        ${apt.allowExpat?'<span class="badge badge-purple" style="font-size:10px;padding:2px 7px;">✈️ Expat</span>':''}
       </div>
       <div class="apt-actions">
         ${res&&res.status==='confirmed'&&res.checkin===td?`<button class="btn btn-sm btn-success" onclick="openCheckinModal('${res.id}')">✅ Check In</button>`:''}
@@ -1604,8 +1544,7 @@ function renderReports(){
 function renderAptSettings(){
   document.getElementById('apt-settings-grid').innerHTML=apts.map(a=>{
     const {rate,label}=aptRate(a);
-    const activeRT=a.rateType||'night';
-    return`<div class="apt-card" style="cursor:default;">
+        return`<div class="apt-card" style="cursor:default;">
       <div class="apt-header">
         <div><div class="apt-number">${a.name}</div><div class="apt-type">${a.type==='2br'?'2 Bedrooms':'1 Bedroom'} · ${a.floor}</div></div>
         <span class="badge ${a.status==='available'?'badge-green':a.status==='maintenance'?'badge-amber':'badge-gray'}">${a.status}</span>
@@ -1616,11 +1555,7 @@ function renderAptSettings(){
           <span style="font-weight:600;color:var(--accent);margin-left:4px;">${cur(rate)}${label}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-          <span class="badge ${activeRT==='night'?'badge-blue':'badge-gray'}" style="font-size:10px;">🌙 ${cur(a.rateNight||0)}/night</span>
-          <span class="badge ${activeRT==='week'?'badge-blue':'badge-gray'}" style="font-size:10px;">📅 ${cur(a.rateWeek||0)}/week</span>
-          <span class="badge ${activeRT==='month'?'badge-blue':'badge-gray'}" style="font-size:10px;">🗓️ ${cur(a.rateMonth||0)}/mo</span>
-        </div>
-        ${a.allowExpat?`<div><span class="badge badge-purple" style="font-size:10px;">✈️ Expat — min ${a.minContractMonths||12} month(s)</span></div>`:'<div style="font-size:11px;color:var(--text3);">Short-stay only</div>'}
+          <span class="badge badge-blue" style="font-size:10px;">🌙 ${cur(aptRate(a).rate)}/night</span><span style="font-size:11px;color:var(--text3);margin-left:6px;">Max ${a.maxGuests||2} guests</span>
         ${a.notes?`<div style="margin-top:6px;color:var(--text3);">${a.notes}</div>`:''}
       </div>
       <div class="apt-actions"><button class="btn btn-sm btn-primary" onclick="openAptModal('${a.id}')">✏️ Edit</button></div>
@@ -1637,7 +1572,7 @@ function fillAptSelect(selId){
   apts.forEach(a=>{
     const {rate,label}=aptRate(a);
     const o=document.createElement('option');
-    o.value=a.id;o.textContent=`${a.name} (${a.type==='2br'?'2BR':'1BR'}) — ${cur(rate)}${label}${a.allowExpat?' ✈️ Expat':''}`;
+    o.value=a.id;o.textContent=`${a.name} (${a.type==='2br'?'2BR':'1BR'}) — ${cur(rate)}${label}`;
     sel.appendChild(o);
   });
 }
@@ -1673,7 +1608,7 @@ function openNewReservationModal(preAptId){
   document.getElementById('mres-deposit').value='';
   document.getElementById('mres-deposit-status').value='not_collected';
   document.getElementById('mres-deposit-note').value='';
-  document.getElementById('mres-expat-info').style.display='none';
+  document.createElement('div').style.display='none';
   document.getElementById('mres-expat-fields').style.display='none';
   ['mres-employer','mres-contract-ref'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mres-contract-duration').value='';
@@ -1708,11 +1643,11 @@ function editRes(id){
   document.getElementById('mres-deposit-note').value=r.depositNote||'';
   // expat fields
   const a=apts.find(x=>x.id===r.apt);
-  const expatInfo=document.getElementById('mres-expat-info');
+  const expatInfo=document.createElement('div');
   const expatFields=document.getElementById('mres-expat-fields');
-  if(a&&a.allowExpat){
+  if(true){
     expatInfo.style.display='';expatFields.style.display='';
-    document.getElementById('mres-expat-min').textContent=a.minContractMonths||12;
+    document.createElement('span').textContent=a.minContractMonths||12;
     document.getElementById('mres-rate-label').textContent='Rate ('+aptRate(a).labelFull+') *';
   } else {
     expatInfo.style.display='none';expatFields.style.display='none';
@@ -1728,25 +1663,10 @@ function editRes(id){
 }
 
 function aptSelected(){
-  const a=apts.find(x=>x.id===document.getElementById('mres-apt').value);
-  if(a){
-    const {rate,labelFull}=aptRate(a);
-    document.getElementById('mres-rate').value=rate;
-    document.getElementById('mres-rate-label').textContent='Rate ('+labelFull+') *';
-    const expatInfo=document.getElementById('mres-expat-info');
-    const expatFields=document.getElementById('mres-expat-fields');
-    if(a.allowExpat){
-      expatInfo.style.display='';
-      expatFields.style.display='';
-      document.getElementById('mres-expat-min').textContent=a.minContractMonths||12;
-    } else {
-      expatInfo.style.display='none';
-      expatFields.style.display='none';
-    }
-    calcTotal();
-  }
+  const a=apartments.find(x=>x.id===document.getElementById('mres-apt').value)||{};
+  document.getElementById('mres-rate').value=aptRate(a).rate||'';
+  calcTotal();
 }
-
 function calcNights(){
   const ci=document.getElementById('mres-ci').value,co=document.getElementById('mres-co').value;
   const n=nights(ci,co);
@@ -1759,18 +1679,10 @@ function calcNights(){
 }
 
 function calcTotal(){
-  const ci=document.getElementById('mres-ci').value,co=document.getElementById('mres-co').value;
-  const n=nights(ci,co);
-  const r=parseFloat(document.getElementById('mres-rate').value)||0;
-  const a=apts.find(x=>x.id===document.getElementById('mres-apt').value);
-  const rt=a?a.rateType||'night':'night';
-  let total=0;
-  if(rt==='week') total=r*(n/7);
-  else if(rt==='month') total=r*(n/30.44);
-  else total=r*n;
-  document.getElementById('mres-total').value=n&&r?cfg.currency+total.toFixed(2):'';
+  const n=nights(document.getElementById('mres-checkin').value,document.getElementById('mres-checkout').value);
+  const r=Number(document.getElementById('mres-rate').value)||0;
+  document.getElementById('mres-total').value=cfg.currency+(r*n).toFixed(2);
 }
-
 function saveReservation(){
   const apt=document.getElementById('mres-apt').value;
   const guest=document.getElementById('mres-guest').value;
@@ -1924,24 +1836,8 @@ function savePayment(){
 // ─────────────────────────────
 // MODAL: APARTMENT
 // ─────────────────────────────
-function onRateTypeChange(){
-  const rt=document.querySelector('input[name="mapt-rate-type"]:checked')?.value||'night';
-  const hints={night:'The nightly rate will be used for reservations.',week:'The weekly rate will be used. Total = weekly rate × (days ÷ 7).',month:'The monthly rate will be used. Total = monthly rate × (days ÷ 30.44).'};
-  document.getElementById('rate-hint').textContent=hints[rt]||'';
-  ['night','week','month'].forEach(t=>{
-    const lbl=document.getElementById('rt-'+t+'-lbl');
-    lbl.style.borderColor=rt===t?'var(--accent)':'var(--border)';
-    lbl.style.background=rt===t?'var(--accent-light)':'';
-    lbl.style.color=rt===t?'var(--accent)':'';
-  });
-}
-
-function onExpatToggle(){
-  const on=document.getElementById('mapt-allow-expat').checked;
-  document.getElementById('mapt-expat-options').style.display=on?'':'none';
-  document.getElementById('mapt-expat-off').style.display=on?'none':'';
-}
-
+function onRateTypeChange(){}
+function onExpatToggle(){}
 function openAptModal(id){
   const a=apts.find(x=>x.id===id);if(!a)return;
   document.getElementById('mapt-id').value=id;
@@ -1950,15 +1846,14 @@ function openAptModal(id){
   document.getElementById('mapt-type').value=a.type;
   document.getElementById('mapt-floor').value=a.floor||'';
   document.getElementById('mapt-rate-night').value=a.rateNight||a.rate||'';
-  document.getElementById('mapt-rate-week').value=a.rateWeek||'';
-  document.getElementById('mapt-rate-month').value=a.rateMonth||'';
+  document.createElement('div').value=a.rateWeek||'';
+  document.createElement('div').value=a.rateMonth||'';
   // rate type radio
   const rt=a.rateType||'night';
   document.getElementById('rt-'+rt).checked=true;
   onRateTypeChange();
   // expat
-  document.getElementById('mapt-allow-expat').checked=!!a.allowExpat;
-  document.getElementById('mapt-min-contract').value=a.minContractMonths||12;
+    document.createElement('div').value=a.minContractMonths||12;
   document.getElementById('mapt-max').value=a.maxGuests||2;
   onExpatToggle();
   document.getElementById('mapt-status').value=a.status||'available';
@@ -1972,13 +1867,11 @@ function saveApartment(){
   a.name=document.getElementById('mapt-name').value;
   a.type=document.getElementById('mapt-type').value;
   a.floor=document.getElementById('mapt-floor').value;
-  a.rateType=document.querySelector('input[name="mapt-rate-type"]:checked')?.value||'night';
-  a.rateNight=parseFloat(document.getElementById('mapt-rate-night').value)||0;
-  a.rateWeek=parseFloat(document.getElementById('mapt-rate-week').value)||0;
-  a.rateMonth=parseFloat(document.getElementById('mapt-rate-month').value)||0;
+    a.rateNight=parseFloat(document.getElementById('mapt-rate-night').value)||0;
+  a.rateWeek=parseFloat(document.createElement('div').value)||0;
+  a.rateMonth=parseFloat(document.createElement('div').value)||0;
   a.rate=a.rateNight; // backward compat
-  a.allowExpat=document.getElementById('mapt-allow-expat').checked;
-  a.minContractMonths=parseInt(document.getElementById('mapt-min-contract').value)||12;
+    a.minContractMonths=parseInt(document.createElement('div').value)||12;
   a.maxGuests=parseInt(document.getElementById('mapt-max').value)||2;
   a.status=document.getElementById('mapt-status').value;
   a.notes=document.getElementById('mapt-notes').value;
@@ -3590,7 +3483,7 @@ loadChartJs(()=>buildChart('revenue'));
     ]).then(function(results){
       var sA=results[0], sG=results[1], sR=results[2], sP=results[3], sI=results[4];
       
-      if(sA && sA.length) apts=sA.map(function(a){return {id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',allowExpat:a.allow_expat,minContractMonths:a.min_contract_months||1,notes:a.notes||''};});
+      if(sA && sA.length) apts=sA.map(function(a){return {id:a.id,name:a.name,type:a.type,floor:a.floor||'',rate:parseFloat(a.rate_night)||0,rateNight:parseFloat(a.rate_night)||0,rateWeek:parseFloat(a.rate_week)||0,rateMonth:parseFloat(a.rate_month)||0,rateType:a.rate_type||'night',maxGuests:a.max_guests||2,status:a.status||'available',minContractMonths:a.min_contract_months||1,notes:a.notes||''};});
       if(sG && sG.length) guests=sG.map(function(g){return {id:g.id,first:g.first_name,last:g.last_name,email:g.email||'',phone:g.phone||'',country:g.country||'',idNum:g.id_num||'',lang:g.lang||'en',notes:g.notes||''};});
       if(sR && sR.length) reservations=sR.map(function(r){return {id:r.id,apt:r.apt_id,guest:r.guest_id,checkin:nd(r.checkin),checkout:nd(r.checkout),rate:parseFloat(r.rate)||0,rateType:r.rate_type||'night',total:parseFloat(r.total)||0,nights:r.nights||0,adults:r.adults||1,children:r.children||0,status:r.status||'confirmed',source:r.source||'direct',notes:r.notes||'',depositAmount:parseFloat(r.deposit_amount)||0,depositStatus:r.deposit_status||'not_collected',employer:r.employer||'',contractDuration:r.contract_duration||''};});
       if(sP && sP.length) payments=sP.map(function(p){return {id:p.id,resId:p.res_id,invId:p.inv_id,amount:parseFloat(p.amount)||0,date:nd(p.payment_date),method:p.method||'Cash',note:p.note||''};});
