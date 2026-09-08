@@ -1464,6 +1464,7 @@ function advanceStatus(id){
 
 function delRes(id){
   if(!confirm('Delete this reservation?'))return;
+  fetch(`/api/reservations/${id}`,{method:'DELETE'}).catch(e=>console.warn('[PMS] Delete res API error:',e));
   reservations=reservations.filter(r=>r.id!==id);persist();renderRes();toast('Reservation deleted.');
 }
 
@@ -1498,6 +1499,7 @@ function renderGuests(){
 function delGuest(id){
   if(reservations.find(r=>r.guest===id)){alert('Cannot delete: guest has existing reservations.');return;}
   if(!confirm('Delete this guest?'))return;
+  fetch(`/api/guests/${id}`,{method:'DELETE'}).catch(e=>console.warn('[PMS] Delete guest API error:',e));
   guests=guests.filter(g=>g.id!==id);persist();renderGuests();toast('Guest deleted.');
 }
 
@@ -1807,8 +1809,17 @@ function saveReservation(){
     contractStart:document.getElementById('mres-contract-start').value,
     contractEnd:document.getElementById('mres-contract-end').value,
     contractRef:document.getElementById('mres-contract-ref').value};
+  const resId=editId||uid();
+  const apiRes={id:resId,apt_id:data.apt,guest_id:data.guest,checkin:data.checkin,checkout:data.checkout,
+    rate:data.rate,rate_type:data.rateType,total:data.total,nights:data.nights,pay_day:data.payDay,
+    adults:data.adults,children:data.children,status:data.status,source:data.source,notes:data.notes,
+    employer:data.employer,contract_duration:data.contractDuration,contract_start:data.contractStart,
+    contract_end:data.contractEnd,contract_ref:data.contractRef};
+  fetch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(apiRes)})
+    .then(r=>{if(!r.ok)r.text().then(t=>console.warn('[PMS] Reservation save error:',t));})
+    .catch(e=>console.warn('[PMS] Reservation API unreachable:',e));
   if(editId){Object.assign(reservations.find(x=>x.id===editId),data);}
-  else{reservations.push({id:uid(),created:new Date().toISOString(),...data});}
+  else{reservations.push({id:resId,created:new Date().toISOString(),...data});}
   persist();closeModal('modal-res');toast('Reservation saved!');renderPage(curPage);
 }
 
@@ -1839,6 +1850,11 @@ function saveGuest(){
     country:document.getElementById('mg-country').value,idNum:document.getElementById('mg-idnum').value,
     lang:document.getElementById('mg-lang').value||'en',
     notes:document.getElementById('mg-notes').value};
+  const guestUrl=editId?`/api/guests/${editId}`:'/api/guests';
+  const guestMethod=editId?'PUT':'POST';
+  fetch(guestUrl,{method:guestMethod,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(r=>{if(!r.ok)r.text().then(t=>console.warn('[PMS] Guest save error:',t));})
+    .catch(e=>console.warn('[PMS] Guest API unreachable:',e));
   if(editId){const idx=guests.findIndex(x=>x.id===editId);if(idx>-1)guests[idx]=data;}
   else{guests.push({...data,created:new Date().toISOString()});}
   persist();closeModal('modal-guest');toast('Guest saved!');
