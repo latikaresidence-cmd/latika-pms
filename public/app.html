@@ -1664,7 +1664,8 @@ function editRes(id){
 
 function aptSelected(){
   const a=apartments.find(x=>x.id===document.getElementById('mres-apt').value)||{};
-  document.getElementById('mres-rate').value=aptRate(a).rate||'';
+  const rEl=document.getElementById('mres-rate');
+  if(rEl)rEl.value=aptRate(a).rate||'';
   calcTotal();
 }
 function calcNights(){
@@ -1679,9 +1680,10 @@ function calcNights(){
 }
 
 function calcTotal(){
-  const n=nights(document.getElementById('mres-checkin').value,document.getElementById('mres-checkout').value);
-  const r=Number(document.getElementById('mres-rate').value)||0;
-  document.getElementById('mres-total').value=cfg.currency+(r*n).toFixed(2);
+  const n=parseInt(document.getElementById('mres-nights')?.value)||0;
+  const r=Number(document.getElementById('mres-rate')?.value)||0;
+  const t=document.getElementById('mres-total');
+  if(t)t.value=cfg.currency+(r*n).toFixed(2);
 }
 function saveReservation(){
   const apt=document.getElementById('mres-apt').value;
