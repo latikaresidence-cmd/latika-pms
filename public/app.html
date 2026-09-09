@@ -1633,6 +1633,8 @@ function editRes(id){
   document.getElementById('mres-ci').value=r.checkin;
   document.getElementById('mres-co').value=r.checkout;
   document.getElementById('mres-rate').value=r.rate;
+  const rtEl=document.querySelector('input[name="mres-rate-type"][value="'+(r.rateType||'night')+'"');
+  if(rtEl)rtEl.checked=true;
   document.getElementById('mres-adults').value=r.adults||1;
   document.getElementById('mres-children').value=r.children||0;
   document.getElementById('mres-status').value=r.status;
@@ -1672,7 +1674,7 @@ function calcNights(){
   const ci=document.getElementById('mres-ci').value,co=document.getElementById('mres-co').value;
   const n=nights(ci,co);
   const a=apts.find(x=>x.id===document.getElementById('mres-apt').value);
-  const rt=a?a.rateType||'night':'night';
+  const rt=document.querySelector('input[name="mres-rate-type"]:checked')?.value||'night';
   if(rt==='week') document.getElementById('mres-nights').value=n+' nights ('+(n/7).toFixed(2)+' wks)';
   else if(rt==='month') document.getElementById('mres-nights').value=n+' nights ('+(n/30.44).toFixed(2)+' mo)';
   else document.getElementById('mres-nights').value=n;
@@ -1683,7 +1685,10 @@ function calcTotal(){
   const n=parseInt(document.getElementById('mres-nights')?.value)||0;
   const r=Number(document.getElementById('mres-rate')?.value)||0;
   const t=document.getElementById('mres-total');
-  if(t)t.value=cfg.currency+(r*n).toFixed(2);
+  if(!t)return;
+  const rt=document.querySelector('input[name="mres-rate-type"]:checked')?.value||'night';
+  const total=rt==='month'?r*(n/30):r*n;
+  t['value']=cfg.currency+total.toFixed(2);
 }
 function saveReservation(){
   const apt=document.getElementById('mres-apt').value;
