@@ -582,7 +582,7 @@ select.form-control{cursor:pointer}
       <div class="form-row-3">
         <div class="form-group"><label class="form-label">Duration</label><input type="text" class="form-control" id="mres-nights" readonly style="background:var(--surface2);" placeholder="0"></div>
         <div class="form-group"><label class="form-label" id="mres-rate-label">Rate (per night) *</label><input type="number" class="form-control" id="mres-rate" placeholder="0.00" oninput="calcTotal()"></div>
-        <div class="form-group"><label class="form-label">Total Amount</label><input type="text" class="form-control" id="mres-total" readonly style="background:var(--surface2);font-weight:600;"></div>
+        <div class="form-group"><label class="form-label">Total Amount</label><input type="text" class="form-control" id="mres-total" oninput="calcRate()" style="font-weight:600;"></div>
       </div>
       
       <div class="form-row">
@@ -1633,6 +1633,8 @@ function editRes(id){
   document.getElementById('mres-ci').value=r.checkin;
   document.getElementById('mres-co').value=r.checkout;
   document.getElementById('mres-rate').value=r.rate;
+  const te=document.getElementById('mres-total');
+  if(te)te['value']=cfg.currency+parseFloat(r.total||0).toFixed(2);
   const rtEl=document.querySelector('input[name="mres-rate-type"][value="'+(r.rateType||'night')+'"');
   if(rtEl)rtEl.checked=true;
   document.getElementById('mres-adults').value=r.adults||1;
@@ -1686,9 +1688,15 @@ function calcTotal(){
   const r=Number(document.getElementById('mres-rate')?.value)||0;
   const t=document.getElementById('mres-total');
   if(!t)return;
-  const rt=document.querySelector('input[name="mres-rate-type"]:checked')?.value||'night';
-  const total=rt==='month'?r*(n/30):r*n;
-  t['value']=cfg.currency+total.toFixed(2);
+  t['value']=cfg.currency+(r*n).toFixed(2);
+}
+function calcRate(){
+  const n=parseInt(document.getElementById('mres-nights')?.value)||1;
+  const t=document.getElementById('mres-total');
+  const r=document.getElementById('mres-rate');
+  if(!t||!r)return;
+  const tv=parseFloat(t['value'].replace(/[^0-9.]/g,''))||0;
+  r['value']=(tv/n).toFixed(2);
 }
 function saveReservation(){
   const apt=document.getElementById('mres-apt').value;
@@ -1700,11 +1708,8 @@ function saveReservation(){
   if(ci>=co){alert('Check-out must be after check-in.');return;}
   const n=nights(ci,co);
   const a=apts.find(x=>x.id===apt);
-  const rt=a?a.rateType||'night':'night';
-  let total=0;
-  if(rt==='week') total=parseFloat(rate)*(n/7);
-  else if(rt==='month') total=parseFloat(rate)*(n/30.44);
-  else total=parseFloat(rate)*n;
+  const t=document.getElementById('mres-total');
+  const total=parseFloat((t?t['value']:'0').replace(/[^0-9.]/g,''))||0;
   const editId=document.getElementById('mres-id').value;
   // Conflict check
   const conflict=reservations.find(r=>{
@@ -1714,7 +1719,7 @@ function saveReservation(){
     return!(co<=r.checkin||ci>=r.checkout);
   });
   if(conflict){alert('Conflict! '+aName(apt)+' is already booked from '+fmtDate(conflict.checkin)+' to '+fmtDate(conflict.checkout)+' for '+gName(conflict.guest)+'.');return;}
-  const data={apt,guest,checkin:ci,checkout:co,rate:parseFloat(rate),rateType:rt,total:parseFloat(total.toFixed(2)),nights:n,
+  const data={apt,guest,checkin:ci,checkout:co,rate:parseFloat(rate),total:parseFloat(total.toFixed(2)),nights:n,
     adults:parseInt(document.getElementById('mres-adults').value)||1,
     children:parseInt(document.getElementById('mres-children').value)||0,
     status:document.getElementById('mres-status').value,
