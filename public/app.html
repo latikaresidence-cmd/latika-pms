@@ -1821,7 +1821,7 @@ function saveReservation(){
     adults:data.adults,children:data.children,status:data.status,source:data.source,notes:data.notes,
     employer:data.employer,contract_duration:data.contractDuration,contract_start:data.contractStart,
     contract_end:data.contractEnd,contract_ref:data.contractRef};
-  fetch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(apiRes)})
+  fetch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json','x-auth-token':localStorage.getItem('pms_auth_token')||'Latika2024'},body:JSON.stringify(apiRes)})
     .then(r=>{if(!r.ok)r>text().then(t=>console.warn('[PMS] Reservation save error:',t));})
     .catch(e=>console.warn('[PMS] Reservation API unreachable:',e));
   if(editId){Object.assign(reservations.find(x=>x.id===editId),data);}
@@ -1852,13 +1852,13 @@ function saveGuest(){
   if(!first||!last){alert('First and last name are required.');return;}
   const editId=document.getElementById('mguest-id').value;
   let savedId=editId||uid();
-  const data={id:savedId,first,last,email:document.getElementById('mg-email').value,phone:document.getElementById('mg-phone').value,
-    country:document.getElementById('mg-country').value,idNum:document.getElementById('mg-idnum').value,
+  const data={id:savedId,first_name:first,last_name:last,email:document.getElementById('mg-email').value,phone:document.getElementById('mg-phone').value,
+    country:document.getElementById('mg-country').value,id_num:document.getElementById('mg-idnum').value,
     lang:document.getElementById('mg-lang').value||'en',
     notes:document.getElementById('mg-notes').value};
   const guestUrl=editId?`/api/guests/${editId}`:'/api/guests';
   const guestMethod=editId?'PUT':'POST';
-  fetch(guestUrl,{method:guestMethod,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+  fetch(guestUrl,{method:guestMethod,headers:{'Content-Type':'application/json','x-auth-token':localStorage.getItem('pms_auth_token')||'Latika2024'},body:JSON.stringify(data)})
     .then(r=>{if(!r.ok)r.text().then(t=>console.warn('[PMS] Guest save error:',t));})
     .catch(e=>console.warn('[PMS] Guest API unreachable:',e));
   if(editId){const idx=guests.findIndex(x=>x.id===editId);if(idx>-1)guests[idx]=data;}
