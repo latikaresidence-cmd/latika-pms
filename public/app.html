@@ -1780,7 +1780,7 @@ function calcRate(){
   r['value']=(tv/n).toFixed(2);
 }
 
-function saveReservation(){
+async function saveReservation(){
   const apt=document.getElementById('mres-apt').value;
   const guest=document.getElementById('mres-guest').value;
   const ci=document.getElementById('mres-ci').value;
@@ -1816,23 +1816,20 @@ function saveReservation(){
     contractEnd:document.getElementById('mres-contract-end').value,
     contractRef:document.getElementById('mres-contract-ref').value};
   const resId=editId||uid();
-  const apiRes={id:resId,apt_id:data.apt,guest_id:data.guest,checkin:data.checkin,checkout:data.checkout,
-    rate:data.rate,rate_type:data.rateType,total:data.total,nights:data.nights,pay_day:data.payDay,
+  cons  const apiRes={id:resId,apt_id:data.apt,guest_id:data.guest,checkin:data.checkin,checkout:data.checkout,
+    rate:data.rate,rate_type:data.rateType||'night',total:data.total,nights:data.nights,
+    deposit_amount:data.depositAmount,deposit_status:data.depositStatus,deposit_note:data.depositNote,
     adults:data.adults,children:data.children,status:data.status,source:data.source,notes:data.notes,
     employer:data.employer,contract_duration:data.contractDuration,contract_start:data.contractStart,
-    contract_end:data.contractEnd,contract_ref:data.contractRef};
-  fetch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json','x-auth-token':localStorage.getItem('pms_auth_token')||'Latika2024'},body:JSON.stringify(apiRes)})
-    .then(r=>{if(!r.ok)r>text().then(t=>console.warn('[PMS] Reservation save error:',t));})
-    .catch(e=>console.warn('[PMS] Reservation API unreachable:',e));
+    contract_end:data.contractEnd,contract_ref:data.contractRef};ch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json','x-auth-toke  const token=localStorage.getItem('pms_auth_token')||'Latika2024';
+  try{
+    const r=await fetch('/api/reservations',{method:'POST',headers:{'Content-Type':'application/json','x-auth-token':token},body:JSON.stringify(apiRes)});
+    if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not save reservation: '+msg);return;}
+  }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
   if(editId){Object.assign(reservations.find(x=>x.id===editId),data);}
   else{reservations.push({id:resId,created:new Date().toISOString(),...data});}
   persist();closeModal('modal-res');toast('Reservation saved!');renderPage(curPage);
-}
-
-// ─────────────────────────────
-// MODAL: GUEST
-// ─────────────────────────────
-function openGuestModal(id){
+}uestModal(id){
   _openGuestFromRes=false;
   document.getElementById('mguest-id').value=id||'';
   document.getElementById('mguest-title').textContent=id?'Edit Guest':'Add Guest';
@@ -1846,7 +1843,7 @@ function openGuestModal(id){
   openModal('modal-guest');
 }
 
-function saveGuest(){
+async function saveGuest(){
   const first=document.getElementById('mg-first').value.trim();
   const last=document.getElementById('mg-last').value.trim();
   if(!first||!last){alert('First and last name are required.');return;}
@@ -1858,11 +1855,14 @@ function saveGuest(){
     notes:document.getElementById('mg-notes').value};
   const guestUrl=editId?`/api/guests/${editId}`:'/api/guests';
   const guestMethod=editId?'PUT':'POST';
-  fetch(guestUrl,{method:guestMethod,headers:{'Content-Type':'application/json','x-auth-token':localStorage.getItem('pms_auth_token')||'Latika2024'},body:JSON.stringify(data)})
-    .then(r=>{if(!r.ok)r.text().then(t=>console.warn('[PMS] Guest save error:',t));})
-    .catch(e=>console.warn('[PMS] Guest API unreachable:',e));
-  if(editId){const idx=guests.findIndex(x=>x.id===editId);if(idx>-1)guests[idx]=data;}
-  else{guests.push({...data,created:new Date().toISOString()});}
+  fetc  const token=localStorage.getItem('pms_auth_token')||'Latika2024';
+  try{
+    const r=await fetch(guestUrl,{method:guestMethod,headers:{'Content-Type':'application/json','x-auth-token':token},body:JSON.stringify(data)});
+    if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not save guest: '+msg);return;}
+  }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
+  const memData={id:savedId,first:data.first_name||data.first||'',last:data.last_name||data.last||'',email:data.email||'',phone:data.phone||'',country:data.country||'',idNum:data.id_num||data.idNum||'',lang:data.lang||'en',notes:data.notes||''};
+  if(editId){const idx=guests.findIndex(x=>x.id===editId);if(idx>-1)guests[idx]=memData;}
+  else{guests.push({...memData,created:new Date().toISOString()});}
   persist();closeModal('modal-guest');toast('Guest saved!');
   if(_openGuestFromRes){
     fillGuestSelect('mres-guest');
@@ -1870,9 +1870,7 @@ function saveGuest(){
     openModal('modal-res');
     _openGuestFromRes=false;
   } else {renderGuests();}
-}
-
-// ─────────────────────────────
+}────────────────────────────
 // MODAL: PAYMENT
 // ─────────────────────────────
 function openPayModal(preResId, preInvId){
