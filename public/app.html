@@ -1828,7 +1828,31 @@ async function saveReservation(){
     if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not save reservation: '+msg);return;}
   }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
   if(editId){Object.assign(reservations.find(x=>x.id===editId),data);}
-  else{reservations.push({id:resId,created:new Date().toISOString(),...data});}
+  else{
+    reservations.push({id:resId,created:new Date().toISOString(),...data});
+    // Auto-create draft invoice for new reservations
+    const a2=apts.find(x=>x.id===data.apt);
+    const rt=a2?a2.rateType||'night':'night';
+    const rtLabel=rt==='month'?'Monthly Rent':rt==='week'?'Weekly Rent':'Nightly Rent';
+    const today2=new Date().toISOString().split('T')[0];
+    const autoInvId=uid();
+    const autoInvNum=invNumber();
+    const autoApiInv={id:autoInvId,number:autoInvNum,res_id:resId,invoice_date:today2,
+      period_from:data.checkin,period_to:data.checkout,rent_label:rtLabel,rent:data.total,
+      elec_on:false,elec_prev:0,elec_curr:0,elec_price:0,elec_amount:0,
+      water_on:false,water_prev:0,water_curr:0,water_price:0,water_amount:0,
+      extras:[],total:data.total,status:'draft',notes:''};
+    try{
+      const invR=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json','x-auth-token':token},body:JSON.stringify(autoApiInv)});
+      if(invR.ok){
+        invoices.push({id:autoInvId,number:autoInvNum,resId,created:new Date().toISOString(),
+          date:today2,periodFrom:data.checkin,periodTo:data.checkout,rentLabel:rtLabel,rent:data.total,
+          elecOn:false,elecPrev:0,elecCurr:0,elecPrice:0,elecAmount:0,
+          waterOn:false,waterPrev:0,waterCurr:0,waterPrice:0,waterAmount:0,
+          extras:[],total:data.total,status:'draft',notes:''});
+      }
+    }catch(e){/* invoice save failure is non-blocking */}
+  }
   persist();closeModal('modal-res');toast('Reservation saved!');renderPage(curPage);
 }
 
@@ -2173,8 +2197,13 @@ function renderInvoices(){
   }).join('');
 }
 
-function delInvoice(id){
+async function delInvoice(id){
   if(!confirm('Delete this invoice?'))return;
+  const token=localStorage.getItem('pms_auth_token')||'Latika2024';
+  try{
+    const r=await fetch('/api/invoices/'+id,{method:'DELETE',headers:{'Content-Type':'application/json','x-auth-token':token}});
+    if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not delete invoice: '+msg);return;}
+  }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
   invoices=invoices.filter(x=>x.id!==id);persist();renderInvoices();toast('Invoice deleted.');
 }
 
@@ -2369,22 +2398,42 @@ function collectInvoiceData(){
     status:document.getElementById('minv-status').value,notes:document.getElementById('minv-notes').value};
 }
 
-function saveInvoice(){
+async function saveInvoice(){
   const data=collectInvoiceData();
   if(!data.date){alert('La date est obligatoire.');return;}
   const editId=document.getElementById('minv-id').value;
+  const invId=editId||uid();
+  const existingInv=editId?invoices.find(x=>x.id===editId):null;
+  const invNum=existingInv?existingInv.number:invNumber();
+  const apiInv={id:invId,number:invNum,res_id:data.resId||null,invoice_date:data.date,
+    period_from:data.periodFrom||null,period_to:data.periodTo||null,
+    rent_label:data.rentLabel||'Rent',rent:data.rent||0,
+    elec_on:!!data.elecOn,elec_prev:data.elecPrev||0,elec_curr:data.elecCurr||0,
+    elec_price:data.elecPrice||0,elec_amount:data.elecAmount||0,
+    water_on:!!data.waterOn,water_prev:data.waterPrev||0,water_curr:data.waterCurr||0,
+    water_price:data.waterPrice||0,water_amount:data.waterAmount||0,
+    extras:data.extras||[],total:data.total||0,status:data.status||'draft',notes:data.notes||''};
+  const token=localStorage.getItem('pms_auth_token')||'Latika2024';
+  try{
+    if(editId){
+      // No PUT endpoint — delete then re-insert with same ID
+      await fetch('/api/invoices/'+editId,{method:'DELETE',headers:{'Content-Type':'application/json','x-auth-token':token}});
+    }
+    const r=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json','x-auth-token':token},body:JSON.stringify(apiInv)});
+    if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not save invoice: '+msg);return;}
+  }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
   if(editId){
     const inv=invoices.find(x=>x.id===editId);
-    Object.assign(inv,data);
-  } else {
-    invoices.push({id:uid(),number:invNumber(),created:new Date().toISOString(),...data});
+    if(inv)Object.assign(inv,{...data,number:invNum,id:invId});
+  }else{
+    invoices.push({id:invId,number:invNum,created:new Date().toISOString(),...data});
   }
   persist();closeModal('modal-invoice');toast('Invoice saved!');renderInvoices();
 }
 
-function saveAndPrintInvoice(){
+async function saveAndPrintInvoice(){
   const editId=document.getElementById('minv-id').value;
-  saveInvoice();
+  await saveInvoice();
   // find the invoice just saved
   let target;
   if(editId){
