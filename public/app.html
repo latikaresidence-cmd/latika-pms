@@ -2100,8 +2100,20 @@ let invStatusFilter='';
 function filterInvStatus(v){invStatusFilter=v;renderInvoices();}
 
 function invNumber(){
-  const n=invoices.length+1;
-  return 'INV-'+new Date().getFullYear()+'-'+n.toString().padStart(4,'0');
+  const year=new Date().getFullYear();
+  const prefix='INV-'+year+'-';
+  // Use stored counter or scan existing invoices — whichever is higher
+  let max=cfg.invCounter||0;
+  invoices.forEach(inv=>{
+    if(inv.number&&inv.number.startsWith(prefix)){
+      const n=parseInt(inv.number.slice(prefix.length),10);
+      if(n>max)max=n;
+    }
+  });
+  const next=max+1;
+  cfg.invCounter=next; // persist so deletions never reset the sequence
+  persist();
+  return prefix+next.toString().padStart(4,'0');
 }
 
 function renderInvoices(){
