@@ -2003,7 +2003,7 @@ function openAptModal(id){
   openModal('modal-apt');
 }
 
-function saveApartment(){
+async function saveApartment(){
   const id=document.getElementById('mapt-id').value;
   const a=apts.find(x=>x.id===id);if(!a)return;
   a.name=document.getElementById('mapt-name').value;
@@ -2019,6 +2019,15 @@ function saveApartment(){
   a.maxGuests=parseInt(document.getElementById('mapt-max').value)||2;
   a.status=document.getElementById('mapt-status').value;
   a.notes=document.getElementById('mapt-notes').value;
+  const token=localStorage.getItem('pms_auth_token')||'Latika2024';
+  try{
+    const r=await fetch('/api/apartments/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-auth-token':token},body:JSON.stringify({
+      name:a.name,type:a.type,floor:a.floor,rate_night:a.rateNight,rate_week:a.rateWeek,
+      rate_month:a.rateMonth,rate_type:a.rateType,max_guests:a.maxGuests,status:a.status,
+      allow_expat:a.allowExpat,min_contract_months:a.minContractMonths,notes:a.notes
+    })});
+    if(!r.ok){const txt=await r.text();let msg='Server error';try{msg=JSON.parse(txt).error||msg;}catch(e){}alert('Could not save apartment: '+msg);return;}
+  }catch(e){alert('Could not reach server. Please check your connection and try again.');return;}
   persist();closeModal('modal-apt');toast('Apartment updated!');renderAptSettings();
 }
 
