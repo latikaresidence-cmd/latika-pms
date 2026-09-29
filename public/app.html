@@ -1294,8 +1294,8 @@ let calOff=0;
 
 function renderCal(){
   const now=new Date();
-  now.setMonth(now.getMonth()+calOff);
-  const y=now.getFullYear(),m=now.getMonth();
+  const target=new Date(now.getFullYear(),now.getMonth()+calOff,1);
+  const y=target.getFullYear(),m=target.getMonth();
   const days=new Date(y,m+1,0).getDate();
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('cal-label').textContent=MONTHS[m]+' '+y;
