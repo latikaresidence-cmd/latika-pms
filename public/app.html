@@ -1698,7 +1698,6 @@ function editRes(id){
   document.getElementById('mres-ci').value=r.checkin;
   document.getElementById('mres-co').value=r.checkout;
   document.getElementById('mres-rate').value=r.rate;
-  const te=document.getElementById('mres-total');if(te)te['value']=cfg.currency+parseFloat(r.total||0).toFixed(2);
   document.getElementById('mres-adults').value=r.adults||1;
   document.getElementById('mres-children').value=r.children||0;
   document.getElementById('mres-status').value=r.status;
@@ -1725,6 +1724,7 @@ function editRes(id){
   document.getElementById('mres-contract-end').value=r.contractEnd||'';
   document.getElementById('mres-contract-ref').value=r.contractRef||'';
   calcNights();
+  const te=document.getElementById('mres-total');if(te)te.value=cfg.currency+parseFloat(r.total||0).toFixed(2);
   openModal('modal-res');
 }
 
